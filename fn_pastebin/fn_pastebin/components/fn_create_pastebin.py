@@ -114,8 +114,9 @@ class FunctionComponent(ResilientComponent):
             PASTEBIN_API_DEV_KEY = str(get_config_option("pastebin_api_dev_key"))
 
             # Get the Pastebin username, its optional, if defined, will log the user in, then create the paste
-            PASTEBIN_API_USER_NAME = str(get_config_option("pastebin_api_user_name", True))
-
+            PASTEBIN_API_USER_NAME = get_config_option("pastebin_api_user_name", True)
+            if PASTEBIN_API_USER_NAME is not None:
+                PASTEBIN_API_USER_NAME = str(PASTEBIN_API_USER_NAME)
             # Get the function inputs:
             inputs = {
               "pastebin_code": get_function_input(kwargs, "pastebin_code"), # text (required)
@@ -124,6 +125,10 @@ class FunctionComponent(ResilientComponent):
               "pastebin_privacy": get_function_input(kwargs, "pastebin_privacy", True), # text (optional)
               "pastebin_expiration": get_function_input(kwargs, "pastebin_expiration", True) # text (optional)
             }
+            
+            # Validate conflicting privacy level (Public = 0, Unlisted = 1, Private = 2) with provided app.config.
+            if inputs["pastebin_privacy"] == 2 and PASTEBIN_API_USER_NAME is None:
+               raise ValueError("Cannot create 'private' pastes without a username 'pastebin_api_user_name'")
 
             # Create payload dict with inputs
             payload = FunctionPayload(inputs)
